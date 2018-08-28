@@ -1,14 +1,15 @@
 #!/bin/sh
 # set -x
 
-# Version: 0.6
-# Date:    2018-06-05
+# Version: 0.7
+# Date:    2018-08-28
 # Changelog:
 #	small fixes, for wrong apikey
 #	add tasmota switch for user and password use variable apikey
 #	redesign with options
 #	add tasmota temperature, humidity
 #	add sonoff pow
+#       add sonoff 4 channel
 
 # More Detail and how you enable espurna restapi:
 # https://github.com/xoseperez/espurna/wiki/RESTAPI
@@ -21,7 +22,7 @@
 
 usage() {
 	echo -e 'usage:'
-	echo -e "\t $(basename $0) -f [status|switch|switch-t|switch-th] -c CUX2801xxx:x -i ipaddr [-a apikey] [-u user] [-p password] [-o value] [-d] [-h]\n"
+	echo -e "\t $(basename $0) -f [status|switch|switch-t|switch-th] -c CUX2801xxx:x -i ipaddr [-n relayr_nr] [-a apikey] [-u user] [-p password] [-o value] [-d] [-h]\n"
 	echo -e '\t examples espurna firmware:'
 	echo -e "\t $(basename $0) -h # this usage info"
 	echo -e "\t $(basename $0) -f switch    -c CUX2801xxx:x -i 192.168.x.x -a 1234567890123456      # status switch"
@@ -37,6 +38,7 @@ usage() {
 	echo -e "\t $(basename $0) -f status    -c CUX2801xxx:x -i 192.168.x.x -a 1234567890123456      # espurna available restapi\n"
 	echo -e '\t examples tasmota firmware:'
 	echo -e "\t $(basename $0) -f switch    -c CUX2801xxx:x -i 192.168.x.x -u user -p password      # status switch"
+	echo -e "\t $(basename $0) -f switch    -c CUX2801xxx:x -i 192.168.x.x -u user -p password -n 2 # status switch relay nr 2
 	echo -e "\t $(basename $0) -f switch    -c CUX2801xxx:x -i 192.168.x.x -u user -p password -o 0 # switch off"
 	echo -e "\t $(basename $0) -f switch    -c CUX2801xxx:x -i 192.168.x.x -u user -p password -o 1 # switch on"
 	echo -e "\t $(basename $0) -f switch    -c CUX2801xxx:x -i 192.168.x.x -u user -p password -o 2 # switch toggle on/off"
@@ -60,9 +62,10 @@ APIKEY=''
 USER=''
 PASSWD=''
 VALUE=''
+RELNR=''
 
 
-while getopts "h?df:c:i:a:u:p:o:" opt; do
+while getopts "h?df:c:i:a:u:p:o:n:" opt; do
     case "$opt" in
     h|\?)
         usage
@@ -81,6 +84,8 @@ while getopts "h?df:c:i:a:u:p:o:" opt; do
     o)  VALUE=$OPTARG
 	;;
     p)  PASSWD=$OPTARG
+	;;
+    n)  RELNR=$OPTARG
 	;;
     d)  DEBUG=1
 	;;
@@ -109,7 +114,8 @@ if [ $DEBUG -eq 1 ] ; then
         Debugmsg1=$Debugmsg1"API-Key:  $APIKEY\n"
         Debugmsg1=$Debugmsg1"Value:    $VALUE\n"
         Debugmsg1=$Debugmsg1"user:     $USER\n"
-        Debugmsg1=$Debugmsg1"password: $PASSWD\n\n"
+        Debugmsg1=$Debugmsg1"password: $PASSWD\n"
+	Debugmsg1=$Debugmsg1"relay nr: $RELNR\n\n"
 fi
 
 CURL=/usr/bin/curl
@@ -171,13 +177,13 @@ func_switch(){
 		if [ -z $APIKEY ] ; then
 			case $VALUE in
 			      0)
-				VALUE='Power%20Off'
+				VALUE="Power${RELNR}%20Off"
 				;;
 			      1)
-				VALUE='Power%20On'
+				VALUE="Power${RELNR}%20On"
 				;;
 			      2)
-				VALUE='Power%20Toggle'
+				VALUE="Power${RELNR}%20Toggle"
 				;;
 			esac
 			if [ "x$PASSWD" != 'x' ] ; then
@@ -186,7 +192,7 @@ func_switch(){
 				URL2="http://${IPADDR}/cm?user=${USER}&password=${PASSWD}&cmnd=Power"
 			else
 				URL="http://${IPADDR}/cm?cmnd=${VALUE}"
-				URL2="http://${IPADDR}/cm?cmnd=Power"
+				URL2="http://${IPADDR}/cm?cmnd=Power${RELNR}"
 			fi
 		else
 			URL="http://${IPADDR}/api/relay/0?apikey=${APIKEY}&value=${VALUE}"
@@ -196,7 +202,7 @@ func_switch(){
 		TEST=$(${CURL} -s ${CURL_timout} "${URL}")
 		Debugmsg1=$Debugmsg1"cmd: \t\t${CURL} -s ${CURL_timout} \"${URL2}\" \n"
 		OUT=$(${CURL} -s ${CURL_timout} "${URL2}")
-		STATE=$(echo $OUT | sed 's/{"POWER":"//g' | sed 's/"}//g' | sed 's/ON/1/g' | sed 's/OFF/0/g')
+		STATE=$(echo $OUT | sed "s/{\"POWER${RELNR}\":\"//g" | sed 's/"}//g' | sed 's/ON/1/g' | sed 's/OFF/0/g')
 		echo -e "\tswitch[0|1]: ${STATE}"
 		set_CUxD_state $STATE $CHANNEL
 	fi
