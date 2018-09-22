@@ -9,8 +9,8 @@
 #	redesign with options
 #	add tasmota temperature, humidity
 #	add sonoff pow
-#       add sonoff 4 channel
-#	add espurna mor than 1 relay
+#	add sonoff 4 channel
+#	add espurna more than 1 relay
 
 # More Detail and how you enable espurna restapi:
 # https://github.com/xoseperez/espurna/wiki/RESTAPI
