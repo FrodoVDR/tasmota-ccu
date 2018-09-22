@@ -1,8 +1,8 @@
 #!/bin/sh
 # set -x
 
-# Version: 0.7
-# Date:    2018-08-28
+# Version: 0.8
+# Date:    2018-09-22
 # Changelog:
 #	small fixes, for wrong apikey
 #	add tasmota switch for user and password use variable apikey
@@ -10,6 +10,7 @@
 #	add tasmota temperature, humidity
 #	add sonoff pow
 #       add sonoff 4 channel
+#	add espurna mor than 1 relay
 
 # More Detail and how you enable espurna restapi:
 # https://github.com/xoseperez/espurna/wiki/RESTAPI
@@ -29,6 +30,7 @@ usage() {
 	echo -e "\t $(basename $0) -f switch    -c CUX2801xxx:x -i 192.168.x.x -a 1234567890123456 -o 0 # switch off"
 	echo -e "\t $(basename $0) -f switch    -c CUX2801xxx:x -i 192.168.x.x -a 1234567890123456 -o 1 # switch on"
 	echo -e "\t $(basename $0) -f switch    -c CUX2801xxx:x -i 192.168.x.x -a 1234567890123456 -o 2 # switch toggle on/off"
+	echo -e "\t $(basename $0) -f switch    -c CUX2801xxx:x -i 192.168.x.x -a 1234567890123456 -o 0 -n 3 # switch 4 relay off
 	echo -e "\t $(basename $0) -f switch-t  -c CUX2801xxx:x -i 192.168.x.x -a 1234567890123456      # status switch and temperature"
 	echo -e "\t $(basename $0) -f switch-t  -c CUX2801xxx:x -i 192.168.x.x -a 1234567890123456 -o 0 # switch off with temperature"
 	echo -e "\t $(basename $0) -f switch-t  -c CUX2801xxx:x -i 192.168.x.x -a 1234567890123456 -o 1 # switch on  with temperature"
@@ -195,8 +197,12 @@ func_switch(){
 				URL2="http://${IPADDR}/cm?cmnd=Power${RELNR}"
 			fi
 		else
-			URL="http://${IPADDR}/api/relay/0?apikey=${APIKEY}&value=${VALUE}"
-			URL2="http://${IPADDR}/api/relay/0?apikey=${APIKEY}"
+			if [ -z $RELNR ] ; then
+				RELNR=0
+			fi
+				
+			URL="http://${IPADDR}/api/relay/${RELNR}?apikey=${APIKEY}&value=${VALUE}"
+			URL2="http://${IPADDR}/api/relay/${RELNR}?apikey=${APIKEY}"
 		fi
 		Debugmsg1=$Debugmsg1"func:   \t\t$FUNC\ncmd: \t\t${CURL} -s ${CURL_timout} \"${URL}\" \n"
 		TEST=$(${CURL} -s ${CURL_timout} "${URL}")
