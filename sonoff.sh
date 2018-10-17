@@ -1,16 +1,17 @@
 #!/bin/sh
-# set -x
+#set -x
 
-# Version: 0.8
-# Date:    2018-09-22
+# Version: 0.9
+# Date:    2018-10-17
 # Changelog:
 #	small fixes, for wrong apikey
 #	add tasmota switch for user and password use variable apikey
 #	redesign with options
 #	add tasmota temperature, humidity
 #	add sonoff pow
-#	add sonoff 4 channel
+#       add sonoff 4 channel
 #	add espurna more than 1 relay
+#	change parameter check for tasmota to jq
 
 # More Detail and how you enable espurna restapi:
 # https://github.com/xoseperez/espurna/wiki/RESTAPI
@@ -228,7 +229,11 @@ func_switch_temperature(){
                                 URL="http://${IPADDR}/cm?cmnd=status%2010"
                         fi
 			Debugmsg1=$Debugmsg1"func:   \t\t$FUNC\ncmd: \t\t${CURL} -s ${CURL_timout} \"${URL}\" \n"
-			STATE=$(${CURL} -s ${CURL_timout} "${URL}" | sed -e 's/"//g' -e 's/{//g' -e 's/}//g' | cut -d ',' -f2 | cut -d ':' -f3 )
+			for i in $(${CURL} -s ${CURL_timout} "${URL}" | jq '.StatusSNS' | grep -e ': {$' | awk -F'"' '{print $2}');
+			do
+				STATE=$( ${CURL} -s ${CURL_timout} "${URL}" | jq ".StatusSNS.$i.Temperature"; )
+				break;
+			done
                 else
 			URL="http://${IPADDR}/api/temperature?apikey=${APIKEY}"
 			Debugmsg1=$Debugmsg1"func:   \t\t$FUNC\ncmd: \t\t${CURL} -s ${CURL_timout} \"${URL}\" \n"
@@ -249,7 +254,11 @@ func_switch_humidity(){
                                 URL="http://${IPADDR}/cm?cmnd=status%2010"
                         fi
                         Debugmsg1=$Debugmsg1"func:   \t\t$FUNC\ncmd: \t\t${CURL} -s ${CURL_timout} \"${URL}\" \n"
-                        STATE=$(${CURL} -s ${CURL_timout} "${URL}" | sed -e 's/"//g' -e 's/{//g' -e 's/}//g' | cut -d ',' -f3 | cut -d ':' -f2 )
+			for i in $(${CURL} -s ${CURL_timout} "${URL}" | jq '.StatusSNS' | grep -e ': {$' | awk -F'"' '{print $2}'); 
+			do 
+				STATE=$( ${CURL} -s ${CURL_timout} "${URL}" | jq ".StatusSNS.$i.Humidity"; )
+				break; 
+			done
                 else
                         URL="http://${IPADDR}/api/humidity?apikey=${APIKEY}"
                         Debugmsg1=$Debugmsg1"func:   \t\t$FUNC\ncmd: \t\t${CURL} -s ${CURL_timout} \"${URL}\" \n"
@@ -277,25 +286,25 @@ func_switch_power(){
                                 URL="http://${IPADDR}/cm?cmnd=status%2010"
                         fi
                         Debugmsg1=$Debugmsg1"func:   \t\t$FUNC\ncmd: \t\t${CURL} -s ${CURL_timout} \"${URL}\" \n"
-                        STATE=$(${CURL} -s ${CURL_timout} "${URL}" | grep -i energy | awk -F'{' '{ print $4 }' | sed -e 's/{//g' -e 's/}//g' -e 's/"//g')
-			TOTAL=$(echo $STATE | cut -d, -f1 | cut -d: -f2 )
+                        STATE=$(${CURL} -s ${CURL_timout} "${URL}" | jq '.StatusSNS' | jq '.ENERGY' )
+			TOTAL=$(echo $STATE | jq '.Total' )
 			TOTAL_EH='kWh'
 			TOTAL_VAR='total'
-			YESTERDAY=$(echo $STATE | cut -d, -f2 | cut -d: -f2 )
+			YESTERDAY=$(echo $STATE | jq '.Yesterday' )
 			YESTERDAY_EH='kWh'
 			YESTERDAY_VAR='yesterday'
-			TODAY=$(echo $STATE | cut -d, -f3 | cut -d: -f2 )
+			TODAY=$(echo $STATE | jq '.Today' )
 			TODAY_EH='kWh'
 			TODAY_VAR='today'
-			POWER=$(echo $STATE | cut -d, -f4 | cut -d: -f2 )
+			POWER=$(echo $STATE | jq '.Power' )
 			POWER_EH='W'
 			POWER_VAR='power'
-			FACTOR=$(echo $STATE | cut -d, -f5 | cut -d: -f2 )
+			FACTOR=$(echo $STATE | jq '.Factor' )
 			FACTOR_EH=''
 			FACTOR_VAR='factor'
-			VOLTAGE=$(echo $STATE | cut -d, -f6 | cut -d: -f2 )
+			VOLTAGE=$(echo $STATE | jq '.Voltage' )
 			VOLTAGE_VAR='voltage'
-			AMPERE=$(echo $STATE | cut -d, -f7 | cut -d: -f2 )
+			AMPERE=$(echo $STATE | jq '.Current' )
 			AMPERE_VAR='ampere'
                 else
                         URL="http://${IPADDR}/api/current?apikey=${APIKEY}"
