@@ -1,8 +1,8 @@
 #!/bin/sh
 #set -x
 
-# Version: 0.9
-# Date:    2018-10-17
+version='0.10'
+# Date:    2019-02-07
 # Changelog:
 #	small fixes, for wrong apikey
 #	add tasmota switch for user and password use variable apikey
@@ -12,6 +12,7 @@
 #       add sonoff 4 channel
 #	add espurna more than 1 relay
 #	change parameter check for tasmota to jq
+#       usage fixed
 
 # More Detail and how you enable espurna restapi:
 # https://github.com/xoseperez/espurna/wiki/RESTAPI
@@ -24,14 +25,15 @@
 
 usage() {
 	echo -e 'usage:'
-	echo -e "\t $(basename $0) -f [status|switch|switch-t|switch-th] -c CUX2801xxx:x -i ipaddr [-n relayr_nr] [-a apikey] [-u user] [-p password] [-o value] [-d] [-h]\n"
+	echo -e "\t $(basename $0) -f [status|switch|switch-t|switch-p|switch-th] -c CUX2801xxx:x -i ipaddr [-n relayr_nr] [-a apikey] [-u user] [-p password] [-o value] [-d] [-h]\n"
+	echo -e ' '
 	echo -e '\t examples espurna firmware:'
 	echo -e "\t $(basename $0) -h # this usage info"
 	echo -e "\t $(basename $0) -f switch    -c CUX2801xxx:x -i 192.168.x.x -a 1234567890123456      # status switch"
 	echo -e "\t $(basename $0) -f switch    -c CUX2801xxx:x -i 192.168.x.x -a 1234567890123456 -o 0 # switch off"
 	echo -e "\t $(basename $0) -f switch    -c CUX2801xxx:x -i 192.168.x.x -a 1234567890123456 -o 1 # switch on"
 	echo -e "\t $(basename $0) -f switch    -c CUX2801xxx:x -i 192.168.x.x -a 1234567890123456 -o 2 # switch toggle on/off"
-	echo -e "\t $(basename $0) -f switch    -c CUX2801xxx:x -i 192.168.x.x -a 1234567890123456 -o 0 -n 3 # switch 4 relay off
+	echo -e "\t $(basename $0) -f switch    -c CUX2801xxx:x -i 192.168.x.x -a 1234567890123456 -o 0 -n 3 # switch 4 relay off"
 	echo -e "\t $(basename $0) -f switch-t  -c CUX2801xxx:x -i 192.168.x.x -a 1234567890123456      # status switch and temperature"
 	echo -e "\t $(basename $0) -f switch-t  -c CUX2801xxx:x -i 192.168.x.x -a 1234567890123456 -o 0 # switch off with temperature"
 	echo -e "\t $(basename $0) -f switch-t  -c CUX2801xxx:x -i 192.168.x.x -a 1234567890123456 -o 1 # switch on  with temperature"
@@ -39,15 +41,18 @@ usage() {
 	echo -e "\t $(basename $0) -f switch-th -c CUX2801xxx:x -i 192.168.x.x -a 1234567890123456 -o 0 # switch off with status temperature and humidity"
 	echo -e "\t $(basename $0) -f switch-th -c CUX2801xxx:x -i 192.168.x.x -a 1234567890123456 -o 1 # switch on  with status temperature and humidity"
 	echo -e "\t $(basename $0) -f status    -c CUX2801xxx:x -i 192.168.x.x -a 1234567890123456      # espurna available restapi\n"
-	echo -e '\t examples tasmota firmware:'
+	echo -e ' '
+	echo -e "\t examples tasmota firmware:"
 	echo -e "\t $(basename $0) -f switch    -c CUX2801xxx:x -i 192.168.x.x -u user -p password      # status switch"
-	echo -e "\t $(basename $0) -f switch    -c CUX2801xxx:x -i 192.168.x.x -u user -p password -n 2 # status switch relay nr 2
+	echo -e "\t $(basename $0) -f switch    -c CUX2801xxx:x -i 192.168.x.x -u user -p password -n 2 # status switch relay nr 2"
 	echo -e "\t $(basename $0) -f switch    -c CUX2801xxx:x -i 192.168.x.x -u user -p password -o 0 # switch off"
 	echo -e "\t $(basename $0) -f switch    -c CUX2801xxx:x -i 192.168.x.x -u user -p password -o 1 # switch on"
 	echo -e "\t $(basename $0) -f switch    -c CUX2801xxx:x -i 192.168.x.x -u user -p password -o 2 # switch toggle on/off"
 	echo -e "\t $(basename $0) -f switch-th -c CUX2801xxx:x -i 192.168.x.x -u user -p password      # status switch, temperature and humidity"
 	echo -e "\t $(basename $0) -f switch-p  -c CUX2801xxx:x -i 192.168.x.x -u user -p password      # status switch, power, volt, ampere, ..."
 	echo -e "\t $(basename $0) -f status    -c CUX2801xxx:x -i 192.168.x.x -u user -p password      # tasmota status"
+	echo -e ' '
+	echo -e "\t version: $version"
 	exit 0
 }
 
