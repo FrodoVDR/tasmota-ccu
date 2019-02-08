@@ -1,8 +1,8 @@
 #!/bin/sh
-#set -x
+# set -x
 
-version='0.10'
-# Date:    2019-02-07
+version='0.11'
+# Date:    2019-02-08
 # Changelog:
 #	small fixes, for wrong apikey
 #	add tasmota switch for user and password use variable apikey
@@ -13,14 +13,16 @@ version='0.10'
 #	add espurna more than 1 relay
 #	change parameter check for tasmota to jq
 #       usage fixed
+#	change getopts to getopt, because CCU2 can't use getopts
 
 # More Detail and how you enable espurna restapi:
 # https://github.com/xoseperez/espurna/wiki/RESTAPI
 
 # Test:
-# ./sonoff.sh -f status -c CUX2801004:4 -i 192.168.6.131 -u admin -p bilbo01 -d
+# ./sonoff.sh -f status -c CUX2801004:4 -i 192.168.6.131 -u admin -p password -d
 # ./sonoff.sh -f status -c CUX2801004:3 -i 192.168.6.115 -a C87129A2AD1EE170 -d
 # ./sonoff.sh -f status -c CUX2801004:1 -i 192.168.6.156
+# ./sonoff.sh -f switch-p -c CUX2801004:5 -i 192.168.4.53
 
 
 usage() {
@@ -72,37 +74,57 @@ PASSWD=''
 VALUE=''
 RELNR=''
 
-
-while getopts "h?df:c:i:a:u:p:o:n:" opt; do
-    case "$opt" in
-    h|\?)
-        usage
-        exit 0
-        ;;
-    f)  FUNC=$OPTARG
-        ;;
-    c)  CHANNEL=$OPTARG
-        ;;	
-    i)  IPADDR=$OPTARG
-        ;;
-    a)  APIKEY=$OPTARG
-        ;;
-    u)	USER=$OPTARG
-	;;
-    o)  VALUE=$OPTARG
-	;;
-    p)  PASSWD=$OPTARG
-	;;
-    n)  RELNR=$OPTARG
-	;;
-    d)  DEBUG=1
-	;;
-    esac
+OPT=`getopt -o hf:c:i:a:u:p:o:n:d --long help,function:,channel:,ip-addr:,apikey:,user:,value:,passwd:,relaynumber:,debug -- "$@"`
+eval set -- "$OPT"
+while true; do
+	case "$1" in
+	-h|--help)
+		usage
+		exit 0
+		;;
+    	-f|--function)
+		FUNC=$2
+		shift 2
+        	;;
+    	-c|--channel)
+		CHANNEL=$2
+		shift 2
+        	;;	
+    	-i|--ip-addr)
+		IPADDR=$2
+		shift 2
+        	;;
+    	-a|--apikey)
+		APIKEY=$2
+		shift 2
+        	;;
+    	-u|--user)
+		USER=$2
+		shift 2
+        	;;
+    	-o|--value)
+		VALUE=$2
+		shift 2
+        	;;
+    	-p|--passwd)
+		PASSWD=$2
+		shift 2
+        	;;
+    	-n|--relaynumber)
+		RELNR=$2
+		shift 2
+       		;;
+    	-d|--debug)
+		DEBUG=1
+		shift
+		;;
+	--) 
+		shift
+		break
+		;;
+	*)	echo "Internal error!" ; exit 1 ;;
+	esac
 done
-
-shift $((OPTIND-1))
-
-[ "${1:-}" = "--" ] && shift
 
 if [ -z $FUNC ] ; then
 	usage
