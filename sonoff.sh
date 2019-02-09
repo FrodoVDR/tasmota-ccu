@@ -1,7 +1,7 @@
 #!/bin/sh
 # set -x
 
-version='0.11'
+version='0.12'
 # Date:    2019-02-08
 # Changelog:
 #	small fixes, for wrong apikey
@@ -14,6 +14,7 @@ version='0.11'
 #	change parameter check for tasmota to jq
 #       usage fixed
 #	change getopts to getopt, because CCU2 can't use getopts
+#	change curl path to /usr/local/addons/cuxd/curl
 
 # More Detail and how you enable espurna restapi:
 # https://github.com/xoseperez/espurna/wiki/RESTAPI
