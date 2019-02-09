@@ -1,7 +1,7 @@
 #!/bin/sh
 # set -x
 
-version='0.13'
+version='0.14'
 # Date:    2019-02-09
 # Changelog:
 #	small fixes, for wrong apikey
@@ -15,7 +15,8 @@ version='0.13'
 #       usage fixed
 #	change getopts to getopt, because CCU2 can't use getopts
 #	change curl path to /usr/local/addons/cuxd/curl
-
+# 	extend PATH and check for commands
+ 
 # More Detail and how you enable espurna restapi:
 # https://github.com/xoseperez/espurna/wiki/RESTAPI
 
@@ -25,6 +26,41 @@ version='0.13'
 # ./sonoff.sh -f status -c CUX2801004:1 -i 192.168.6.156
 # ./sonoff.sh -f switch-p -c CUX2801004:5 -i 192.168.4.53
 
+# extend PATH
+if [ -d /usr/bin ] ; then
+        test=$(echo $PATH | grep '/usr/bin')
+        if [ $? -ne 0 ] ; then
+                PATH=$PATH:/usr/bin
+        fi
+fi
+if [ -d /usr/local/bin ] ; then
+	test=$(echo $PATH | grep '/usr/local/bin')
+	if [ $? -ne 0 ] ; then
+		PATH=$PATH:/usr/local/bin
+	fi
+fi
+if [ -d /usr/local/addons/cuxd ] ; then
+	test=$(echo $PATH | grep '/usr/local/addons/cuxd')
+	if [ $? -ne 0 ] ; then
+		PATH=$PATH:/usr/local/addons/cuxd
+	fi
+fi
+
+# find commands
+GETOPT=$(which getopt)
+if [ $? -ne 0 ] ; then
+        echo "ERROR: getopt not found"
+fi
+
+CURL=$(which curl)
+if [ $? -ne 0 ] ; then
+	echo "ERROR: curl not found"
+fi
+CURL_timout='-m 5'
+JQ=$(which jq)
+if [ $? -ne 0 ] ; then
+	echo "ERROR: jq not found"
+fi
 
 usage() {
 	echo -e 'usage:'
@@ -75,7 +111,9 @@ PASSWD=''
 VALUE=''
 RELNR=''
 
-OPT=`getopt -o hf:c:i:a:u:p:o:n:d --long help,function:,channel:,ip-addr:,apikey:,user:,value:,passwd:,relaynumber:,debug -- "$@"`
+
+
+OPT=`${GETOPT} -o hf:c:i:a:u:p:o:n:d --long help,function:,channel:,ip-addr:,apikey:,user:,value:,passwd:,relaynumber:,debug -- "$@"`
 eval set -- "$OPT"
 while true; do
 	case "$1" in
@@ -139,6 +177,8 @@ elif [ -z $IPADDR ] ; then
 fi
 
 if [ $DEBUG -eq 1 ] ; then
+	echo $PATH
+	echo
 	Debugmsg1=$Debugmsg1"Function: $FUNC\n"
         Debugmsg1=$Debugmsg1"Channel:  $CHANNEL\n"
         Debugmsg1=$Debugmsg1"IP-Addr:  $IPADDR\n"
@@ -257,9 +297,9 @@ func_switch_temperature(){
                                 URL="http://${IPADDR}/cm?cmnd=status%2010"
                         fi
 			Debugmsg1=$Debugmsg1"func:   \t\t$FUNC\ncmd: \t\t${CURL} -s ${CURL_timout} \"${URL}\" \n"
-			for i in $(${CURL} -s ${CURL_timout} "${URL}" | jq '.StatusSNS' | grep -e ': {$' | awk -F'"' '{print $2}');
+			for i in $(${CURL} -s ${CURL_timout} "${URL}" | ${JQ} '.StatusSNS' | grep -e ': {$' | awk -F'"' '{print $2}');
 			do
-				STATE=$( ${CURL} -s ${CURL_timout} "${URL}" | jq ".StatusSNS.$i.Temperature"; )
+				STATE=$( ${CURL} -s ${CURL_timout} "${URL}" | ${JQ} ".StatusSNS.$i.Temperature"; )
 				break;
 			done
                 else
@@ -282,9 +322,9 @@ func_switch_humidity(){
                                 URL="http://${IPADDR}/cm?cmnd=status%2010"
                         fi
                         Debugmsg1=$Debugmsg1"func:   \t\t$FUNC\ncmd: \t\t${CURL} -s ${CURL_timout} \"${URL}\" \n"
-			for i in $(${CURL} -s ${CURL_timout} "${URL}" | jq '.StatusSNS' | grep -e ': {$' | awk -F'"' '{print $2}'); 
+			for i in $(${CURL} -s ${CURL_timout} "${URL}" | ${JQ} '.StatusSNS' | grep -e ': {$' | awk -F'"' '{print $2}'); 
 			do 
-				STATE=$( ${CURL} -s ${CURL_timout} "${URL}" | jq ".StatusSNS.$i.Humidity"; )
+				STATE=$( ${CURL} -s ${CURL_timout} "${URL}" | ${JQ} ".StatusSNS.$i.Humidity"; )
 				break; 
 			done
                 else
@@ -314,25 +354,25 @@ func_switch_power(){
                                 URL="http://${IPADDR}/cm?cmnd=status%2010"
                         fi
                         Debugmsg1=$Debugmsg1"func:   \t\t$FUNC\ncmd: \t\t${CURL} -s ${CURL_timout} \"${URL}\" \n"
-                        STATE=$(${CURL} -s ${CURL_timout} "${URL}" | jq '.StatusSNS' | jq '.ENERGY' )
-			TOTAL=$(echo $STATE | jq '.Total' )
+                        STATE=$(${CURL} -s ${CURL_timout} "${URL}" | ${JQ} '.StatusSNS' | ${JQ} '.ENERGY' )
+			TOTAL=$(echo $STATE | ${JQ} '.Total' )
 			TOTAL_EH='kWh'
 			TOTAL_VAR='total'
-			YESTERDAY=$(echo $STATE | jq '.Yesterday' )
+			YESTERDAY=$(echo $STATE | ${JQ} '.Yesterday' )
 			YESTERDAY_EH='kWh'
 			YESTERDAY_VAR='yesterday'
-			TODAY=$(echo $STATE | jq '.Today' )
+			TODAY=$(echo $STATE | ${JQ} '.Today' )
 			TODAY_EH='kWh'
 			TODAY_VAR='today'
-			POWER=$(echo $STATE | jq '.Power' )
+			POWER=$(echo $STATE | ${JQ} '.Power' )
 			POWER_EH='W'
 			POWER_VAR='power'
-			FACTOR=$(echo $STATE | jq '.Factor' )
+			FACTOR=$(echo $STATE | ${JQ} '.Factor' )
 			FACTOR_EH=''
 			FACTOR_VAR='factor'
-			VOLTAGE=$(echo $STATE | jq '.Voltage' )
+			VOLTAGE=$(echo $STATE | ${JQ} '.Voltage' )
 			VOLTAGE_VAR='voltage'
-			AMPERE=$(echo $STATE | jq '.Current' )
+			AMPERE=$(echo $STATE | ${JQ} '.Current' )
 			AMPERE_VAR='ampere'
                 else
                         URL="http://${IPADDR}/api/current?apikey=${APIKEY}"
