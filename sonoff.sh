@@ -1,8 +1,8 @@
 #!/bin/sh
 # set -x
 
-version='0.12'
-# Date:    2019-02-08
+version='0.13'
+# Date:    2019-02-09
 # Changelog:
 #	small fixes, for wrong apikey
 #	add tasmota switch for user and password use variable apikey
@@ -149,7 +149,7 @@ if [ $DEBUG -eq 1 ] ; then
 	Debugmsg1=$Debugmsg1"relay nr: $RELNR\n\n"
 fi
 
-CURL=/usr/bin/curl
+CURL=/usr/local/addons/cuxd/curl
 CURL_timout='-m 5'
 
 set_CCU_SysVar(){
