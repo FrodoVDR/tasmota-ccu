@@ -1,8 +1,8 @@
 #!/bin/sh
 # set -x
 
-version='0.14'
-# Date:    2019-02-09
+version='0.15'
+# Date:    2019-07-04
 # Changelog:
 #	small fixes, for wrong apikey
 #	add tasmota switch for user and password use variable apikey
@@ -16,6 +16,7 @@ version='0.14'
 #	change getopts to getopt, because CCU2 can't use getopts
 #	change curl path to /usr/local/addons/cuxd/curl
 # 	extend PATH and check for commands
+#	add PATH /usr/local/addons/redmatic/bin for jq
  
 # More Detail and how you enable espurna restapi:
 # https://github.com/xoseperez/espurna/wiki/RESTAPI
@@ -27,6 +28,12 @@ version='0.14'
 # ./sonoff.sh -f switch-p -c CUX2801004:5 -i 192.168.4.53
 
 # extend PATH
+if [ -d /usr/local/addons/redmatic/bin  ] ; then
+        test=$(echo $PATH | grep '/usr/local/addons/redmatic/bin')
+        if [ $? -ne 0 ] ; then
+                PATH=$PATH:/usr/local/addons/redmatic/bin
+        fi
+fi
 if [ -d /usr/bin ] ; then
         test=$(echo $PATH | grep '/usr/bin')
         if [ $? -ne 0 ] ; then
