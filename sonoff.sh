@@ -1,8 +1,8 @@
 #!/bin/sh
 # set -x
 
-version='0.15'
-# Date:    2019-07-04
+version='0.16'
+# Date:    2019-07-09
 # Changelog:
 #	small fixes, for wrong apikey
 #	add tasmota switch for user and password use variable apikey
@@ -17,6 +17,7 @@ version='0.15'
 #	change curl path to /usr/local/addons/cuxd/curl
 # 	extend PATH and check for commands
 #	add PATH /usr/local/addons/redmatic/bin for jq
+#	add real_name parameter for CCU variable
  
 # More Detail and how you enable espurna restapi:
 # https://github.com/xoseperez/espurna/wiki/RESTAPI
@@ -71,7 +72,7 @@ fi
 
 usage() {
 	echo -e 'usage:'
-	echo -e "\t $(basename $0) -f [status|switch|switch-t|switch-p|switch-th] -c CUX2801xxx:x -i ipaddr [-n relayr_nr] [-a apikey] [-u user] [-p password] [-o value] [-d] [-h]\n"
+	echo -e "\t $(basename $0) -f [status|switch|switch-t|switch-p|switch-th] -c CUX2801xxx:x -i ipaddr [-n relayr_nr] [-a apikey] [-u user] [-p password] [-o value] [-r real_name] [-d] [-h]\n"
 	echo -e ' '
 	echo -e '\t examples espurna firmware:'
 	echo -e "\t $(basename $0) -h # this usage info"
@@ -117,10 +118,11 @@ USER=''
 PASSWD=''
 VALUE=''
 RELNR=''
+REALNAME=''
 
 
 
-OPT=`${GETOPT} -o hf:c:i:a:u:p:o:n:d --long help,function:,channel:,ip-addr:,apikey:,user:,value:,passwd:,relaynumber:,debug -- "$@"`
+OPT=`${GETOPT} -o hf:c:i:a:u:p:o:n:r:d --long help,function:,channel:,ip-addr:,apikey:,user:,value:,passwd:,relaynumber:,realname:,debug -- "$@"`
 eval set -- "$OPT"
 while true; do
 	case "$1" in
@@ -160,6 +162,10 @@ while true; do
 		RELNR=$2
 		shift 2
        		;;
+        -r|--realname)
+                REALNAME=$2
+                shift 2
+                ;;
     	-d|--debug)
 		DEBUG=1
 		shift
@@ -183,6 +189,10 @@ elif [ -z $IPADDR ] ; then
 	exit 1
 fi
 
+if [ -z $REALNAME ] ; then
+	REALNAME="$CHANNEL"
+fi
+
 if [ $DEBUG -eq 1 ] ; then
 	echo $PATH
 	echo
@@ -193,6 +203,7 @@ if [ $DEBUG -eq 1 ] ; then
         Debugmsg1=$Debugmsg1"Value:    $VALUE\n"
         Debugmsg1=$Debugmsg1"user:     $USER\n"
         Debugmsg1=$Debugmsg1"password: $PASSWD\n"
+	Debugmsg1=$Debugmsg1"realname: $REALNAME\n"
 	Debugmsg1=$Debugmsg1"relay nr: $RELNR\n\n"
 fi
 
@@ -288,10 +299,10 @@ func_switch(){
 		echo -e "\tswitch[0|1]: ${STATE}"
 		set_CUxD_state $STATE $CHANNEL
 	fi
-	echo -e "\t[$CHANNEL-status]:    \t$AVAILABLE"
-	echo -e "\t[$CHANNEL-ipaddr]:    \t${IPADDR}"
-	set_CCU_SysVar $AVAILABLE $CHANNEL-status
-	set_CCU_SysVar ${IPADDR} $CHANNEL-ipaddr
+	echo -e "\t[$REALNAME-status]:    \t$AVAILABLE"
+	echo -e "\t[$REALNAME-ipaddr]:    \t${IPADDR}"
+	set_CCU_SysVar $AVAILABLE $REALNAME-status
+	set_CCU_SysVar ${IPADDR} $REALNAME-ipaddr
 }
 
 func_switch_temperature(){
@@ -314,8 +325,8 @@ func_switch_temperature(){
 			Debugmsg1=$Debugmsg1"func:   \t\t$FUNC\ncmd: \t\t${CURL} -s ${CURL_timout} \"${URL}\" \n"
 			STATE=$(${CURL} -s ${CURL_timout} "${URL}")
 		fi
-		echo -e "\t[$CHANNEL-temperature]: \t$STATE C"
-		set_CCU_SysVar $STATE $CHANNEL-temperature
+		echo -e "\t[$REALNAME-temperature]: \t$STATE C"
+		set_CCU_SysVar $STATE $REALNAME-temperature
 	fi
 }
 
@@ -339,8 +350,8 @@ func_switch_humidity(){
                         Debugmsg1=$Debugmsg1"func:   \t\t$FUNC\ncmd: \t\t${CURL} -s ${CURL_timout} \"${URL}\" \n"
                         STATE=$(${CURL} -s ${CURL_timout} "${URL}")
                 fi
-		echo -e "\t[$CHANNEL-humidity]: \t$STATE %"
-		set_CCU_SysVar $STATE $CHANNEL-humidity
+		echo -e "\t[$REALNAME-humidity]: \t$STATE %"
+		set_CCU_SysVar $STATE $REALNAME-humidity
 	fi
 }
 
@@ -416,20 +427,20 @@ func_switch_power(){
 			TODAY_EH='W'
 			TODAY_VAR='reactive'
                 fi
-                echo -e "\t[${CHANNEL}-${TOTAL_VAR}]:    \t$TOTAL $TOTAL_EH"
-		echo -e "\t[${CHANNEL}-${YESTERDAY_VAR}]:\t$YESTERDAY $YESTERDAY_EH"
-		echo -e "\t[${CHANNEL}-${TODAY_VAR}]:    \t$TODAY $TODAY_EH"
-		echo -e "\t[${CHANNEL}-${POWER_VAR}]:    \t$POWER $POWER_EH"
-		echo -e "\t[${CHANNEL}-${FACTOR_VAR}]:   \t$FACTOR $FACTOR_EH"
-		echo -e "\t[${CHANNEL}-${VOLTAGE_VAR}]:  \t$VOLTAGE V"
-		echo -e "\t[${CHANNEL}-${AMPERE_VAR}]:   \t$AMPERE A"
-                set_CCU_SysVar $TOTAL $CHANNEL-${TOTAL_VAR}
-	       	set_CCU_SysVar $YESTERDAY $CHANNEL-${YESTERDAY_VAR}
-		set_CCU_SysVar $TODAY $CHANNEL-${TODAY_VAR}
-		set_CCU_SysVar $POWER $CHANNEL-${POWER_VAR}
-		set_CCU_SysVar $FACTOR $CHANNEL-${FACTOR_VAR}
-		set_CCU_SysVar $VOLTAGE $CHANNEL-voltage
-		set_CCU_SysVar $AMPERE $CHANNEL-ampere
+                echo -e "\t[${REALNAME}-${TOTAL_VAR}]:    \t$TOTAL $TOTAL_EH"
+		echo -e "\t[${REALNAME}-${YESTERDAY_VAR}]:\t$YESTERDAY $YESTERDAY_EH"
+		echo -e "\t[${REALNAME}-${TODAY_VAR}]:    \t$TODAY $TODAY_EH"
+		echo -e "\t[${REALNAME}-${POWER_VAR}]:    \t$POWER $POWER_EH"
+		echo -e "\t[${REALNAME}-${FACTOR_VAR}]:   \t$FACTOR $FACTOR_EH"
+		echo -e "\t[${REALNAME}-${VOLTAGE_VAR}]:  \t$VOLTAGE V"
+		echo -e "\t[${REALNAME}-${AMPERE_VAR}]:   \t$AMPERE A"
+                set_CCU_SysVar $TOTAL $REALNAME-${TOTAL_VAR}
+	       	set_CCU_SysVar $YESTERDAY $REALNAME-${YESTERDAY_VAR}
+		set_CCU_SysVar $TODAY $REALNAME-${TODAY_VAR}
+		set_CCU_SysVar $POWER $REALNAME-${POWER_VAR}
+		set_CCU_SysVar $FACTOR $REALNAME-${FACTOR_VAR}
+		set_CCU_SysVar $VOLTAGE $REALNAME-voltage
+		set_CCU_SysVar $AMPERE $REALNAME-ampere
        fi
 }
 
