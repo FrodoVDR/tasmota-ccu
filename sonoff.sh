@@ -1,8 +1,8 @@
 #!/bin/sh
 # set -x
 
-version='0.16'
-# Date:    2019-07-09
+version='0.17'
+# Date:    2019-12-29
 # Changelog:
 #	small fixes, for wrong apikey
 #	add tasmota switch for user and password use variable apikey
@@ -18,6 +18,7 @@ version='0.16'
 # 	extend PATH and check for commands
 #	add PATH /usr/local/addons/redmatic/bin for jq
 #	add real_name parameter for CCU variable
+# 	extend LD_LIBRARY_PATH
  
 # More Detail and how you enable espurna restapi:
 # https://github.com/xoseperez/espurna/wiki/RESTAPI
@@ -51,6 +52,12 @@ if [ -d /usr/local/addons/cuxd ] ; then
 	test=$(echo $PATH | grep '/usr/local/addons/cuxd')
 	if [ $? -ne 0 ] ; then
 		PATH=$PATH:/usr/local/addons/cuxd
+	fi
+fi
+if [ -d /usr/local/addons/redmatic/lib ] ; then
+	test=$(echo $LD_LIBRARY_PATH | grep '/usr/local/addons/redmatic/lib')
+	if [ $? -ne 0 ] ; then
+		LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/addons/redmatic/lib
 	fi
 fi
 
