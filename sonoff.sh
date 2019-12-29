@@ -1,7 +1,7 @@
 #!/bin/sh
 # set -x
 
-version='0.17'
+version='0.18'
 # Date:    2019-12-29
 # Changelog:
 #	small fixes, for wrong apikey
@@ -33,7 +33,7 @@ version='0.17'
 if [ -d /usr/local/addons/redmatic/bin  ] ; then
         test=$(echo $PATH | grep '/usr/local/addons/redmatic/bin')
         if [ $? -ne 0 ] ; then
-                PATH=$PATH:/usr/local/addons/redmatic/bin
+                PATH=/usr/local/addons/redmatic/bin:$PATH
         fi
 fi
 if [ -d /usr/bin ] ; then
@@ -57,7 +57,7 @@ fi
 if [ -d /usr/local/addons/redmatic/lib ] ; then
 	test=$(echo $LD_LIBRARY_PATH | grep '/usr/local/addons/redmatic/lib')
 	if [ $? -ne 0 ] ; then
-		LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/addons/redmatic/lib
+		LD_LIBRARY_PATH=/usr/local/addons/redmatic/lib:$LD_LIBRARY_PATH
 	fi
 fi
 
