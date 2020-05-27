@@ -285,7 +285,7 @@ func_switch(){
 			if [ "x$PASSWD" != 'x' ] ; then
 
 				URL="http://${IPADDR}/cm?user=${USER}&password=${PASSWD}&cmnd=${VALUE}"
-				URL2="http://${IPADDR}/cm?user=${USER}&password=${PASSWD}&cmnd=Power"
+				URL2="http://${IPADDR}/cm?user=${USER}&password=${PASSWD}&cmnd=Power${RELNR}""
 			else
 				URL="http://${IPADDR}/cm?cmnd=${VALUE}"
 				URL2="http://${IPADDR}/cm?cmnd=Power${RELNR}"
