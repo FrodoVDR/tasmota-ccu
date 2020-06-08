@@ -1,7 +1,7 @@
 #!/bin/sh
 # set -x
 
-version='0.19'
+version='0.20'
 # Date:    2020-06-08
 # Changelog:
 #	small fixes, for wrong apikey
