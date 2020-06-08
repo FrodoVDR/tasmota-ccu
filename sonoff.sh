@@ -1,7 +1,7 @@
 #!/bin/sh
 # set -x
 
-version='0.20'
+version='0.21'
 # Date:    2020-06-08
 # Changelog:
 #	small fixes, for wrong apikey
@@ -282,7 +282,7 @@ func_switch(){
 			if [ "x$PASSWD" != 'x' ] ; then
 
 				URL="http://${IPADDR}/cm?user=${USER}&password=${PASSWD}&cmnd=${VALUE}"
-				URL2="http://${IPADDR}/cm?user=${USER}&password=${PASSWD}&cmnd=Power${RELNR}""
+				URL2="http://${IPADDR}/cm?user=${USER}&password=${PASSWD}&cmnd=Power${RELNR}"
 			else
 				URL="http://${IPADDR}/cm?cmnd=${VALUE}"
 				URL2="http://${IPADDR}/cm?cmnd=Power${RELNR}"
